@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard | Café Propósito</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--olive:#4b5330;--sage:#8f9b6e;--sage-l:#dfe4cc;--cream:#f4f0e4;--paper:#fbf9f2;--ink:#2f3320;--line:#d9d4c0;--gold:#b8860b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Poppins',Arial,sans-serif;font-size:14px}
+header{background:var(--olive);color:#fff;padding:18px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-family:'Playfair Display',serif;font-size:26px;margin:0;font-weight:600}
+header small{display:block;opacity:.8;font-size:12px}
+.ctrl{display:flex;gap:12px;align-items:center;font-size:13px}
+select{font:inherit;padding:7px 10px;border-radius:10px;border:0}
+.live{display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:#7ddc7d;box-shadow:0 0 0 0 #7ddc7d;animation:p 2s infinite}
+.dot.off{background:#e08a7a;animation:none}
+@keyframes p{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.card h2{font-family:'Playfair Display',serif;font-size:17px;margin:0 0 12px;color:var(--olive)}
+.k{grid-column:span 3}
+.k .v{font-family:'Playfair Display',serif;font-size:38px;color:var(--olive);line-height:1.1}
+.k .l{font-size:12px;color:#6b6f55;margin-top:2px}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+@media(max-width:900px){.k{grid-column:span 6}.c4,.c5,.c6,.c7,.c8{grid-column:span 12}}
+.bar{display:grid;grid-template-columns:150px 1fr 36px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
+.bar .t{height:14px;background:var(--sage-l);border-radius:99px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--sage);border-radius:99px;transition:width .6s}
+.bar.top .t i{background:var(--olive)}
+.bar b{text-align:right}
+.hours{display:flex;align-items:flex-end;gap:4px;height:190px;padding-top:10px}
+.hours div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:#6b6f55}
+.hours i{display:block;width:100%;background:var(--sage);border-radius:6px 6px 0 0;transition:height .6s;min-height:2px}
+.hours .pk i{background:var(--olive)}
+.hours span{margin-top:4px}
+.hours em{font-style:normal;font-size:11px;margin-bottom:2px;color:var(--olive);font-weight:600}
+.donut{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.leg div{display:flex;align-items:center;gap:8px;margin:5px 0}
+.leg i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.cm{max-height:300px;overflow:auto}
+.cm p{margin:0;padding:9px 0;border-top:1px dashed var(--line)}
+.cm p:first-child{border-top:0}
+.cm small{color:#8a8d73;display:block;font-size:11px}
+.empty{color:#8a8d73;font-style:italic}
+.badge{background:#fff3cd;color:#7a5b00;border-radius:99px;padding:3px 10px;font-size:11px;margin-left:8px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>PROPÓSITO · Voz del cliente <span id="demo" class="badge" hidden>DATOS DE EJEMPLO</span></h1><small>Dashboard de encuestas de satisfacción</small></div>
+  <div class="ctrl">
+    <select id="range"><option value="today">Hoy</option><option value="week" selected>Últimos 7 días</option><option value="all">Todo</option></select>
+    <div class="live"><span class="dot" id="dot"></span><span id="upd">Conectando…</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="card k"><div class="v" id="k1">–</div><div class="l">Respuestas</div></div>
+  <div class="card k"><div class="v" id="k2">–</div><div class="l">Satisfacción con la atención (de 5)</div></div>
+  <div class="card k"><div class="v" id="k3">–</div><div class="l">Prefiere</div></div>
+  <div class="card k"><div class="v" id="k4">–</div><div class="l">Hora de mayor afluencia</div></div>
+
+  <div class="card c8"><h2>Afluencia por hora (según hora de llenado)</h2><div class="hours" id="hours"></div></div>
+  <div class="card c4"><h2>¿Dulce o salado?</h2><div class="donut" id="donut"></div></div>
+
+  <div class="card c6"><h2>Platos favoritos</h2><div id="platos"></div></div>
+  <div class="card c6"><h2>Atención (promedio de 1 a 5)</h2><div id="rates"></div><h2 style="margin-top:22px">Día de la semana</h2><div id="dias"></div></div>
+
+  <div class="card c6"><h2>Qué les gustaría ver en la carta</h2><div class="cm" id="nuevo"></div></div>
+  <div class="card c6"><h2>Qué mejorar</h2><div class="cm" id="mejora"></div></div>
+</main>
+
+<script>
+// ▼ Misma URL del Apps Script que usa la encuesta. Vacío = datos de ejemplo.
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbyX_UHCf12w0sLOkQ2CmI5Bd-86czxdQacWzux9tjhxfLnQ3P4bw1d609Sh-lA6sCjt2g/exec";
+const REFRESH_MS = 15000;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ROWS = [];
+
+const limaHoy = () => new Intl.DateTimeFormat('en-CA',{timeZone:'America/Lima'}).format(new Date());
+function filtered(){
+  const r=$('#range').value, t=limaHoy();
+  if(r==='all') return ROWS;
+  if(r==='today') return ROWS.filter(x=>x.fecha===t);
+  const d=new Date(t+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()-6);
+  const from=d.toISOString().slice(0,10);
+  return ROWS.filter(x=>x.fecha>=from);
+}
+const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0;
+const count = (arr,f) => arr.reduce((m,x)=>{const k=f(x); if(k) m[k]=(m[k]||0)+1; return m},{});
+const hlabel = h => (h%12||12)+(h<12?'am':'pm');
+
+function bars(el, obj, max, fmt){
+  const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  if(!e.length){el.innerHTML='<p class="empty">Aún sin datos</p>';return}
+  const m=max||e[0][1];
+  el.innerHTML=e.map(([k,v],i)=>`<div class="bar ${i===0?'top':''}"><span>${esc(k)}</span><div class="t"><i style="width:${v/m*100}%"></i></div><b>${fmt?fmt(v):v}</b></div>`).join('');
+}
+function comments(el, rows, key){
+  const list=rows.filter(r=>r[key]).slice(-12).reverse();
+  el.innerHTML=list.length?list.map(r=>`<p>${esc(r[key])}<small>${esc(r.fecha)} · ${esc(r.hora.slice(0,5))}</small></p>`).join(''):'<p class="empty">Aún sin comentarios</p>';
+}
+
+function render(){
+  const R=filtered();
+  $('#k1').textContent=R.length;
+  const all=R.flatMap(r=>[r.a,r.r,r.m]).filter(x=>x>0);
+  $('#k2').textContent=all.length?avg(all).toFixed(1)+' ★':'–';
+
+  const pref=count(R,r=>r.pref); const pe=Object.entries(pref).sort((a,b)=>b[1]-a[1]);
+  $('#k3').textContent=pe.length?pe[0][0]:'–';
+
+  // Horas
+  const hrs=count(R,r=>String(r.h));
+  const hv=Object.keys(hrs).map(Number);
+  const lo=Math.min(7,...(hv.length?hv:[7])), hi=Math.max(21,...(hv.length?hv:[21]));
+  let peak=-1,pv=0; for(let h=lo;h<=hi;h++){if((hrs[h]||0)>pv){pv=hrs[h];peak=h}}
+  $('#k4').textContent=peak>=0?`${hlabel(peak)}–${hlabel(peak+1)}`:'–';
+  let hh=''; for(let h=lo;h<=hi;h++){const v=hrs[h]||0;
+    hh+=`<div class="${h===peak?'pk':''}">${v?`<em>${v}</em>`:''}<i style="height:${pv?v/pv*85:0}%"></i><span>${hlabel(h)}</span></div>`}
+  $('#hours').innerHTML=hh;
+
+  // Donut
+  const total=R.length, colors={'Dulce':'#b8860b','Salado':'#4b5330','Ambos por igual':'#8f9b6e'};
+  let off=0, arcs='';
+  if(total){ pe.forEach(([k,v])=>{const L=v/total*100;
+    arcs+=`<circle r="15.9" cx="21" cy="21" fill="none" stroke="${colors[k]||'#ccc'}" stroke-width="7" stroke-dasharray="${L} ${100-L}" stroke-dashoffset="${-off}" transform="rotate(-90 21 21)"/>`;off+=L}); }
+  $('#donut').innerHTML=`<svg width="150" height="150" viewBox="0 0 42 42"><circle r="15.9" cx="21" cy="21" fill="none" stroke="#dfe4cc" stroke-width="7"/>${arcs}</svg>
+  <div class="leg">${pe.map(([k,v])=>`<div><i style="background:${colors[k]||'#ccc'}"></i>${esc(k)} <b>${Math.round(v/total*100)}%</b> <small>(${v})</small></div>`).join('')||'<p class="empty">Aún sin datos</p>'}</div>`;
+
+  // Platos (top 8)
+  const pl=count(R,r=>r.plato); bars($('#platos'),Object.fromEntries(Object.entries(pl).sort((a,b)=>b[1]-a[1]).slice(0,8)));
+
+  // Atención
+  const rt={'Amabilidad':avg(R.map(r=>r.a).filter(x=>x>0)),'Rapidez':avg(R.map(r=>r.r).filter(x=>x>0)),'Limpieza y ambiente':avg(R.map(r=>r.m).filter(x=>x>0))};
+  if(R.length) bars($('#rates'),rt,5,v=>v.toFixed(1)); else $('#rates').innerHTML='<p class="empty">Aún sin datos</p>';
+
+  // Días
+  const ord=['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+  const dc=count(R,r=>r.dia); const dd={}; ord.forEach(d=>{if(dc[d])dd[d]=dc[d]});
+  bars($('#dias'),dd);
+
+  comments($('#nuevo'),R,'nuevo'); comments($('#mejora'),R,'mejora');
+}
+
+function demoData(){
+  const P=['Dulce','Salado','Ambos por igual'],M=['Sandwich de asado','Brownie','Empanada de rocoto relleno','Torta de zanahoria','Capuchino','Quiche','Butifarra','Pye de manzana','Alfajor de café'];
+  const D=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const N=['Desayunos; más opciones veganas','Jugos naturales','Postres fríos','Menú de almuerzo','Sin gluten'],J=['Rapidez','Más mesas','Pago con Yape/Plin','Variedad de la carta'];
+  const t=new Date(),out=[];
+  for(let i=0;i<70;i++){const d=new Date(t-Math.random()*6*864e5);const h=[8,9,10,11,12,13,15,16,17,18,19][Math.floor(Math.random()**1.4*11)];
+    out.push({fecha:d.toISOString().slice(0,10),hora:`${String(h).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}:00`,h,dia:D[d.getDay()],
+      pref:P[Math.floor(Math.random()*3)],plato:M[Math.floor(Math.random()*M.length)],a:3+Math.floor(Math.random()*3),r:2+Math.floor(Math.random()*4),m:3+Math.floor(Math.random()*3),
+      nuevo:Math.random()<.5?N[Math.floor(Math.random()*N.length)]:'',mejora:Math.random()<.5?J[Math.floor(Math.random()*J.length)]:''})}
+  return out;
+}
+
+function status(ok,msg){$('#dot').className='dot'+(ok?'':' off');$('#upd').textContent=msg}
+async function load(){
+  if(!ENDPOINT){ROWS=ROWS.length?ROWS:demoData();$('#demo').hidden=false;status(true,'Modo ejemplo');render();return}
+  let key=''; try{key=localStorage.getItem('dk')||''}catch(e){}
+  if(!key){key=prompt('Clave del dashboard')||'';try{localStorage.setItem('dk',key)}catch(e){}}
+  try{
+    const res=await fetch(ENDPOINT+'?key='+encodeURIComponent(key)); const j=await res.json();
+    if(!j.ok){ if(j.error==='unauthorized'){try{localStorage.removeItem('dk')}catch(e){}} throw new Error(j.error) }
+    ROWS=j.rows; render(); status(true,'En vivo · '+new Date().toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}));
+  }catch(e){status(false,'Sin conexión / clave incorrecta')}
+}
+$('#range').onchange=render;
+load(); setInterval(load,REFRESH_MS);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+</script>
+</body>
+</html>
