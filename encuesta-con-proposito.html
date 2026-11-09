@@ -66,8 +66,8 @@ footer{text-align:center;font-size:12px;color:#8a8d73;margin-top:20px}
     <div class="tag">Tu gusto</div>
     <h2>¿Qué prefieres? *</h2>
     <div class="big" id="pref"></div>
-    <h2 style="margin-top:18px">¿Cuál es tu plato favorito? *</h2>
-    <p class="hint">Toca uno de la carta.</p>
+    <h2 style="margin-top:18px">¿Cuáles son tus favoritos?</h2>
+    <p class="hint">Elige uno por categoría. Si no quieres elegir en alguna, déjala en blanco. Toca de nuevo para quitar tu elección.</p>
     <div id="menu"></div>
     <label class="f" for="otro">¿Otro favorito que no esté en la lista?</label>
     <input id="otro" type="text" placeholder="Opcional">
@@ -121,7 +121,7 @@ const RATES = [["amabilidad","Amabilidad del personal"],["rapidez","Rapidez de l
 const NUEVO = ["Desayunos","Almuerzos / menú","Opciones veganas","Sin gluten","Jugos naturales","Postres fríos","Café de especialidad","Combos"];
 const MEJORA = ["Rapidez","Variedad de la carta","Precios","Ambiente / música","Tamaño de porciones","Presentación","Más mesas","Pago con Yape/Plin"];
 
-const S = {pref:null, plato:null, r:{}, nuevo:new Set(), mejora:new Set()};
+const S = {pref:null, fav:{Salado:null, Dulce:null, Bebidas:null}, r:{}, nuevo:new Set(), mejora:new Set()};
 const $ = s => document.querySelector(s);
 
 function chip(txt, on, cb){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=txt;b.onclick=()=>cb(b);return b}
@@ -134,8 +134,12 @@ function chip(txt, on, cb){const b=document.createElement('button');b.type='butt
 Object.entries(MENU).forEach(([g,items])=>{
   const h=document.createElement('div');h.className='grp';h.textContent=g;
   const w=document.createElement('div');w.className='chips';
+  // Una opción por categoría; tocar de nuevo la quita (todas son opcionales)
   items.forEach(it=>w.append(chip(it,false,b=>{
-    S.plato=it;document.querySelectorAll('#menu .chip').forEach(c=>c.classList.toggle('on',c===b));
+    const quitar = S.fav[g]===it;
+    S.fav[g] = quitar ? null : it;
+    [...w.children].forEach(c=>c.classList.remove('on'));
+    if(!quitar) b.classList.add('on');
   })));
   $('#menu').append(h,w);
 });
@@ -157,16 +161,17 @@ $('#form').addEventListener('submit',async e=>{
   e.preventDefault();
   const err=$('#err');err.textContent='';
   const nombre=$('#nombre').value.trim();
-  const plato=S.plato||$('#otro').value.trim();
+  const salado=S.fav.Salado||'', dulce=S.fav.Dulce||'', bebida=S.fav.Bebidas||'', otro=$('#otro').value.trim();
+  // Texto combinado (compatible con el script anterior del Sheet)
+  const plato=[salado&&'Salado: '+salado, dulce&&'Dulce: '+dulce, bebida&&'Bebida: '+bebida, otro&&'Otro: '+otro].filter(Boolean).join(' | ');
   if(!nombre) return err.textContent='Escribe tu nombre.';
   if(!S.pref) return err.textContent='Elige si prefieres dulce o salado.';
-  if(!plato) return err.textContent='Cuéntanos tu plato favorito.';
   if(RATES.some(([k])=>!S.r[k])) return err.textContent='Califica los 3 puntos de la atención.';
   if(!$('#ok').checked) return err.textContent='Marca la casilla de aceptación.';
 
   const join=(set,txt)=>[...set,txt.trim()].filter(Boolean).join('; ');
   const payload={
-    nombre, contacto:$('#contacto').value.trim(), pref:S.pref, plato,
+    nombre, contacto:$('#contacto').value.trim(), pref:S.pref, plato, salado, dulce, bebida, otro,
     amabilidad:S.r.amabilidad, rapidez:S.r.rapidez, ambiente:S.r.ambiente,
     nuevo:join(S.nuevo,$('#nuevo').value), mejora:join(S.mejora,$('#mejora').value),
     origen:'QR'

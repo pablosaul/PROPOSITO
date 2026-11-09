@@ -8,7 +8,8 @@ const HOJA = 'Respuestas';
 const TZ = 'America/Lima';
 const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const HEAD = ['Fecha','Hora','Hora (0-23)','Día','Nombre','Contacto','Preferencia','Plato favorito',
-              'Amabilidad','Rapidez','Ambiente','Producto nuevo','Qué mejorar','Origen'];
+              'Amabilidad','Rapidez','Ambiente','Producto nuevo','Qué mejorar','Origen',
+              'Salado favorito','Dulce favorito','Bebida favorita','Otro favorito'];
 
 // Define tu clave del dashboard ejecutando UNA vez la función configurarClave()
 function configurarClave() {
@@ -23,6 +24,9 @@ function hoja_() {
     sh.appendRow(HEAD);
     sh.setFrozenRows(1);
     sh.getRange(1, 1, 1, HEAD.length).setFontWeight('bold').setBackground('#4b5330').setFontColor('#ffffff');
+  } else if (sh.getLastColumn() < HEAD.length) {
+    // Hoja creada con la versión anterior: agrega las columnas nuevas de favoritos
+    sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold').setBackground('#4b5330').setFontColor('#ffffff');
   }
   return sh;
 }
@@ -48,7 +52,8 @@ function doPost(e) {
       dia,
       limpio_(d.nombre), limpio_(d.contacto), limpio_(d.pref), limpio_(d.plato),
       num_(d.amabilidad), num_(d.rapidez), num_(d.ambiente),
-      limpio_(d.nuevo), limpio_(d.mejora), limpio_(d.origen)
+      limpio_(d.nuevo), limpio_(d.mejora), limpio_(d.origen),
+      limpio_(d.salado), limpio_(d.dulce), limpio_(d.bebida), limpio_(d.otro)
     ]);
     return json_({ ok: true });
   } catch (err) {
@@ -68,7 +73,8 @@ function doGet(e) {
   const v = sh.getRange(2, 1, n, HEAD.length).getDisplayValues();
   const rows = v.map(r => ({
     fecha: r[0], hora: r[1], h: Number(r[2]), dia: r[3], pref: r[6], plato: r[7],
-    a: Number(r[8]), r: Number(r[9]), m: Number(r[10]), nuevo: r[11], mejora: r[12]
+    a: Number(r[8]), r: Number(r[9]), m: Number(r[10]), nuevo: r[11], mejora: r[12],
+    salado: r[14], dulce: r[15], bebida: r[16], otro: r[17]
   }));
   return json_({ ok: true, rows });
 }

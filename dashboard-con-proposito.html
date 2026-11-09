@@ -21,6 +21,7 @@ select{font:inherit;padding:7px 10px;border-radius:10px;border:0}
 main{max-width:1180px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
 .card h2{font-family:'Playfair Display',serif;font-size:17px;margin:0 0 12px;color:var(--olive)}
+.card h3{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);margin:14px 0 2px}
 .k{grid-column:span 3}
 .k .v{font-family:'Playfair Display',serif;font-size:38px;color:var(--olive);line-height:1.1}
 .k .l{font-size:12px;color:#6b6f55;margin-top:2px}
@@ -66,7 +67,12 @@ main{max-width:1180px;margin:0 auto;padding:20px 16px 40px;display:grid;grid-tem
   <div class="card c8"><h2>Afluencia por hora (según hora de llenado)</h2><div class="hours" id="hours"></div></div>
   <div class="card c4"><h2>¿Dulce o salado?</h2><div class="donut" id="donut"></div></div>
 
-  <div class="card c6"><h2>Platos favoritos</h2><div id="platos"></div></div>
+  <div class="card c6"><h2>Favoritos por categoría</h2>
+    <h3>Salados</h3><div id="fSalado"></div>
+    <h3>Dulces</h3><div id="fDulce"></div>
+    <h3>Bebidas</h3><div id="fBebida"></div>
+    <h3>Otros (escritos por el cliente)</h3><div id="fOtro"></div>
+  </div>
   <div class="card c6"><h2>Atención (promedio de 1 a 5)</h2><div id="rates"></div><h2 style="margin-top:22px">Día de la semana</h2><div id="dias"></div></div>
 
   <div class="card c6"><h2>Qué les gustaría ver en la carta</h2><div class="cm" id="nuevo"></div></div>
@@ -94,6 +100,13 @@ const avg = a => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0;
 const count = (arr,f) => arr.reduce((m,x)=>{const k=f(x); if(k) m[k]=(m[k]||0)+1; return m},{});
 const hlabel = h => (h%12||12)+(h<12?'am':'pm');
 
+// Lee los favoritos de una fila: columnas nuevas si existen, o el texto combinado "Salado: X | Dulce: Y | Bebida: Z | Otro: W"
+function favs(r){
+  if(r.salado||r.dulce||r.bebida||r.otro) return {s:r.salado,d:r.dulce,b:r.bebida,o:r.otro};
+  const o={s:'',d:'',b:'',o:''}, map={Salado:'s',Dulce:'d',Bebida:'b',Otro:'o'};
+  String(r.plato||'').split(' | ').forEach(p=>{const i=p.indexOf(': '); const k=map[p.slice(0,i)]; if(i>0&&k) o[k]=p.slice(i+2).trim()});
+  return o;
+}
 function bars(el, obj, max, fmt){
   const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
   if(!e.length){el.innerHTML='<p class="empty">Aún sin datos</p>';return}
@@ -132,8 +145,10 @@ function render(){
   $('#donut').innerHTML=`<svg width="150" height="150" viewBox="0 0 42 42"><circle r="15.9" cx="21" cy="21" fill="none" stroke="#dfe4cc" stroke-width="7"/>${arcs}</svg>
   <div class="leg">${pe.map(([k,v])=>`<div><i style="background:${colors[k]||'#ccc'}"></i>${esc(k)} <b>${Math.round(v/total*100)}%</b> <small>(${v})</small></div>`).join('')||'<p class="empty">Aún sin datos</p>'}</div>`;
 
-  // Platos (top 8)
-  const pl=count(R,r=>r.plato); bars($('#platos'),Object.fromEntries(Object.entries(pl).sort((a,b)=>b[1]-a[1]).slice(0,8)));
+  // Favoritos por categoría (top 5 de cada una)
+  const F=R.map(favs);
+  const top=(k)=>Object.fromEntries(Object.entries(count(F,f=>f[k])).sort((a,b)=>b[1]-a[1]).slice(0,5));
+  bars($('#fSalado'),top('s')); bars($('#fDulce'),top('d')); bars($('#fBebida'),top('b')); bars($('#fOtro'),top('o'));
 
   // Atención
   const rt={'Amabilidad':avg(R.map(r=>r.a).filter(x=>x>0)),'Rapidez':avg(R.map(r=>r.r).filter(x=>x>0)),'Limpieza y ambiente':avg(R.map(r=>r.m).filter(x=>x>0))};
@@ -148,13 +163,13 @@ function render(){
 }
 
 function demoData(){
-  const P=['Dulce','Salado','Ambos por igual'],M=['Sandwich de asado','Brownie','Empanada de rocoto relleno','Torta de zanahoria','Capuchino','Quiche','Butifarra','Pye de manzana','Alfajor de café'];
+  const P=['Dulce','Salado','Ambos por igual'],SA=['Sandwich de asado','Empanada de rocoto relleno','Quiche','Butifarra','Sándwich mixto'],DU=['Brownie','Torta de zanahoria','Pye de manzana','Alfajor de café'],BE=['Capuchino','Café americano','Chicha morada','Chocolate caliente'];
   const D=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const N=['Desayunos; más opciones veganas','Jugos naturales','Postres fríos','Menú de almuerzo','Sin gluten'],J=['Rapidez','Más mesas','Pago con Yape/Plin','Variedad de la carta'];
   const t=new Date(),out=[];
   for(let i=0;i<70;i++){const d=new Date(t-Math.random()*6*864e5);const h=[8,9,10,11,12,13,15,16,17,18,19][Math.floor(Math.random()**1.4*11)];
     out.push({fecha:d.toISOString().slice(0,10),hora:`${String(h).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}:00`,h,dia:D[d.getDay()],
-      pref:P[Math.floor(Math.random()*3)],plato:M[Math.floor(Math.random()*M.length)],a:3+Math.floor(Math.random()*3),r:2+Math.floor(Math.random()*4),m:3+Math.floor(Math.random()*3),
+      pref:P[Math.floor(Math.random()*3)],salado:Math.random()<.8?SA[Math.floor(Math.random()*SA.length)]:'',dulce:Math.random()<.8?DU[Math.floor(Math.random()*DU.length)]:'',bebida:Math.random()<.7?BE[Math.floor(Math.random()*BE.length)]:'',otro:'',a:3+Math.floor(Math.random()*3),r:2+Math.floor(Math.random()*4),m:3+Math.floor(Math.random()*3),
       nuevo:Math.random()<.5?N[Math.floor(Math.random()*N.length)]:'',mejora:Math.random()<.5?J[Math.floor(Math.random()*J.length)]:''})}
   return out;
 }
